@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chia tiền nhà</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --line:#e3e6ea; --text:#1c2733; --muted:#6b7683;
+    --green:#1e7f4f; --green-bg:#e8f5ee; --red:#c0392b; --red-bg:#fdeeec;
+    --blue:#1f5fbf; --blue-bg:#eaf1fb; --amber:#8a6d1a; --amber-bg:#fdf6e0;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font:15px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px 16px 80px}
+  h1{font-size:22px;margin:0}
+  h2{font-size:16px;margin:0 0 10px}
+  .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .topbar .right{display:flex;gap:8px;flex-wrap:wrap}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px}
+  button{font:inherit;border:1px solid var(--line);background:linear-gradient(180deg,#ffffff,#f7f8fa);color:var(--text);
+    border-radius:9px;padding:7px 13px;cursor:pointer;box-shadow:0 1px 2px rgba(16,24,40,.06);
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease}
+  button:hover{background:#f0f3f7;border-color:#c9d2dd;transform:translateY(-1px);box-shadow:0 3px 8px rgba(16,24,40,.12)}
+  button:active{transform:translateY(0);box-shadow:0 1px 2px rgba(16,24,40,.08)}
+  button.primary{background:linear-gradient(180deg,#2e6fd6,#1f5fbf);border-color:#1b53a8;color:#fff;
+    box-shadow:0 1px 3px rgba(31,95,191,.35)}
+  button.primary:hover{background:linear-gradient(180deg,#2a67c8,#194f9e);border-color:#164690;box-shadow:0 4px 10px rgba(31,95,191,.35)}
+  button.danger{color:var(--red)}
+  button:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+  .rowbtns button{box-shadow:none}
+  .rowbtns button:hover{transform:none;box-shadow:none}
+  /* nút bật/tắt người chia: giống nút người trả, khi chọn → xanh lá + dấu tick */
+  .seg button.tick.on{background:linear-gradient(180deg,#27995f,#1e7f4f);border-color:#186a42;color:#fff;
+    box-shadow:0 1px 3px rgba(30,127,79,.35)}
+  .seg button.tick.on::before{content:"✓ "}
+  .seg button.tick.on:hover{background:linear-gradient(180deg,#238a55,#1a6f45)}
+  select,input,textarea{font:inherit;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff;color:var(--text)}
+  input:focus,select:focus,textarea:focus{outline:2px solid #bcd2f5;border-color:var(--blue)}
+  label{font-size:13px;color:var(--muted)}
+  .grid{display:grid;gap:10px}
+  .form-grid{grid-template-columns:130px 1.2fr 1.4fr 150px;align-items:end}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap}
+  .seg button{padding:6px 14px}
+  .seg button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .chk{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .chk label{display:flex;gap:5px;align-items:center;font-size:14px;color:var(--text);cursor:pointer}
+  .riui{font-size:12px;color:var(--muted)}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#eef1f4;font-weight:600;white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.bill:hover{background:#f4f8ff;cursor:pointer}
+  tr.editing{outline:2px solid var(--blue)}
+  .ok{color:var(--green);font-weight:700}
+  .bad{color:var(--red);font-weight:700}
+  .pos{color:var(--green);font-weight:600}
+  .neg{color:var(--red);font-weight:600}
+  .pill{display:inline-block;border-radius:20px;padding:1px 9px;font-size:12px;font-weight:600}
+  .pill.high{background:var(--green-bg);color:var(--green)}
+  .pill.medium{background:var(--amber-bg);color:var(--amber)}
+  .pill.low{background:var(--red-bg);color:var(--red)}
+  .muted{color:var(--muted);font-size:13px}
+  .rowbtns{white-space:nowrap}
+  .rowbtns button{padding:2px 8px;font-size:13px;margin-left:4px}
+  .summary-flex{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  .summary-flex>div{flex:1;min-width:300px}
+  .settle{background:var(--blue-bg);border-radius:8px;padding:10px 14px;margin-top:10px}
+  .settle b{color:var(--blue)}
+  .legend{font-size:13px;color:var(--muted);margin-top:8px}
+  dialog{border:1px solid var(--line);border-radius:12px;padding:0;max-width:760px;width:calc(100% - 40px)}
+  dialog::backdrop{background:rgba(20,30,40,.45)}
+  .dlg-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .dlg-body{padding:16px 18px;max-height:70vh;overflow:auto}
+  .dlg-foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+  .scan-bill{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+  .scan-bill .head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+  .scan-bill input[type=text],.scan-bill input[type=date]{padding:4px 8px}
+  .scan-bill input.amt{width:100px;text-align:right}
+  .scan-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:14px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#233042;color:#fff;padding:10px 18px;border-radius:8px;opacity:0;transition:opacity .25s;z-index:99;pointer-events:none;max-width:90%}
+  .toast.show{opacity:1}
+  .people-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #cfd8e3;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .warn-box{background:var(--amber-bg);border:1px solid #eadfaf;border-radius:8px;padding:8px 12px;font-size:13px;margin:8px 0}
+  .warnc{color:var(--amber);font-weight:600}
+  /* autocomplete "ghost": lớp chữ xám nằm SAU ô nhập — không sửa text trong ô nên không phá bộ gõ tiếng Việt */
+  .ac-wrap{position:relative;display:flex}
+  .ac-wrap input{flex:1;position:relative;z-index:1;background:transparent}
+  .ac-ghost{position:absolute;inset:0;z-index:0;padding:7px 10px;border:1px solid transparent;border-radius:8px;
+    background:#fff;background-clip:padding-box;white-space:pre;overflow:hidden;font:inherit;
+    color:transparent;pointer-events:none}
+  .ac-ghost .sug{color:#9aa4b0}
+  .tools{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:14px}
+  .tools label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+  .tools select{padding:4px 8px}
+  /* Màn hình hẹp (điện thoại): form xếp 2 cột thay vì dàn ngang 1 hàng */
+  @media (max-width:700px){
+    .wrap{padding:10px 10px 60px}
+    .form-grid{grid-template-columns:1fr 1fr;grid-auto-flow:dense}
+    .form-grid .field:nth-child(2), .form-grid .field:nth-child(3){grid-column:1 / -1}
+  }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .card{border:none;padding:0;margin-bottom:18px}
+    .wrap{max-width:none;padding:0}
+    tr.bill:hover{background:none}
+    .rowbtns{display:none}
+    th,td{padding:3px 6px;font-size:12px}
+    thead{display:table-header-group}   /* lặp lại hàng tiêu đề ở đầu mỗi trang in */
+    tr{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <h1>💵 Chia tiền nhà</h1>
+      <select id="monthSel" class="no-print" title="Chọn tháng"></select>
+      <button id="btnAddMonth" class="no-print" title="Thêm tháng mới">➕ Tháng</button>
+    </div>
+    <div class="right no-print">
+      <button id="btnPrint" class="primary">🖨️ In / PDF</button>
+      <button id="btnExport" class="primary">💾 Sao lưu</button>
+      <button id="btnImport">📂 Khôi phục</button>
+      <button id="btnScan">🤖 Scan AI</button>
+      <button id="btnSettings" title="Cài đặt">⚙️</button>
+    </div>
+  </div>
+
+  <!-- ===== Form nhập hoá đơn ===== -->
+  <div class="card no-print" id="entryCard">
+    <h2 id="formTitle">Thêm hoá đơn</h2>
+    <div class="grid form-grid">
+      <div class="field"><label>Ngày</label><input type="date" id="fDate"></div>
+      <div class="field"><label>Bill (cửa hàng / khoản chi) — gõ vài chữ đầu, bấm Tab để nhận gợi ý</label><div class="ac-wrap"><input type="text" id="fStore" placeholder="Greatwall, Tiền điện…" autocomplete="off"><div class="ac-ghost" id="fStoreGhost" aria-hidden="true"></div></div></div>
+      <div class="field"><label>Mô tả</label><input type="text" id="fDesc" placeholder="Lẩu, Ăn trưa/2…"></div>
+      <div class="field"><label>Tổng bill</label><input type="text" id="fTotal" inputmode="decimal" placeholder="0.00"></div>
+    </div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;margin-top:12px">
+      <div class="field"><label>Người trả</label><div class="seg" id="fPayer"></div></div>
+      <div class="field"><label>Chia đều cho</label><div class="seg" id="fParts"></div></div>
+    </div>
+    <details id="fRiengBox" style="margin-top:10px">
+      <summary style="cursor:pointer;font-size:14px;color:var(--muted)">Phần riêng (món chỉ của riêng từng người)</summary>
+      <div class="chk" id="fRieng" style="margin-top:8px"></div>
+      <div class="muted" style="margin-top:4px">
+        Nhập được <b>biểu thức như Excel</b>: <code>49.99/2</code>, <code>13.89+11.99</code>, <code>(38.94+3.47)*1.06/2</code>…
+        Phần riêng cộng thẳng cho người đó; phần còn lại của bill chia đều cho những người đã chọn ở trên.
+      </div>
+    </details>
+    <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+      <button class="primary" id="btnSave">➕ Thêm hoá đơn</button>
+      <button id="btnCancelEdit" style="display:none">Huỷ sửa</button>
+      <span class="muted" id="formHint"></span>
+    </div>
+  </div>
+
+  <!-- ===== Bảng hoá đơn ===== -->
+  <div class="card">
+    <h2 id="tableTitle">Hoá đơn trong tháng</h2>
+    <div class="tools no-print">
+      <label>Lọc người trả
+        <select id="filterPayer"><option value="">Tất cả</option></select>
+      </label>
+      <label>Sắp xếp
+        <select id="sortBy">
+          <option value="date-asc">Ngày ↑</option>
+          <option value="date-desc">Ngày ↓</option>
+          <option value="total-desc">Tiền lớn → nhỏ</option>
+          <option value="total-asc">Tiền nhỏ → lớn</option>
+          <option value="payer">Người trả</option>
+        </select>
+      </label>
+      <span class="muted" id="filterInfo"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="billTable"></table>
+    </div>
+    <div class="muted" id="emptyMsg" style="display:none;padding:12px 0">Chưa có hoá đơn nào trong tháng này. Nhập tay ở trên hoặc bấm “🤖 Scan hoá đơn (AI)”.</div>
+  </div>
+
+  <!-- ===== Tổng kết ===== -->
+  <div class="card">
+    <h2>Tổng kết &amp; cân đối</h2>
+    <div class="summary-flex">
+      <div style="overflow-x:auto"><table id="sumTable"></table></div>
+      <div>
+        <div class="settle" id="settleBox"></div>
+        <div class="legend">Cân đối = Thực chi − Thực dùng.<br>• Số <span class="pos">dương</span>: được nhận tiền lại.<br>• Số <span class="neg">âm</span>: phải bù tiền ra.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="muted no-print" style="text-align:center">
+    Dữ liệu tự lưu trên máy (trình duyệt này). Nhớ bấm “💾 Sao lưu” định kỳ để giữ file dự phòng.
+    <span id="lastBackup"></span>
+  </div>
+</div>
+
+<!-- ===== Dialog: Cài đặt ===== -->
+<dialog id="dlgSettings">
+  <div class="dlg-head"><h2 style="margin:0">⚙️ Cài đặt</h2><button onclick="dlgSettings.close()">✕</button></div>
+  <div class="dlg-body">
+    <h2>Thành viên</h2>
+    <div id="peopleList"></div>
+    <button id="btnAddPerson">➕ Thêm người</button>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+    <h2>AI scan hoá đơn (tuỳ chọn)</h2>
+    <div class="field" style="margin-bottom:10px">
+      <label>Anthropic API key — chỉ lưu trên máy này, dùng để gọi thẳng api.anthropic.com</label>
+      <div style="display:flex;gap:8px">
+        <input type="password" id="setKey" style="flex:1" placeholder="sk-ant-api03-…">
+        <button id="btnShowKey" type="button">👁</button>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Model</label>
+      <select id="setModel">
+        <option value="claude-opus-4-8">Claude Opus 4.8 — chính xác nhất ($5 / $25 mỗi triệu token)</option>
+        <option value="claude-sonnet-5">Claude Sonnet 5 — cân bằng ($3 / $15)</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — rẻ nhất ($1 / $5)</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:10px;max-width:140px">
+      <label>Ký hiệu tiền tệ</label>
+      <input type="text" id="setSymbol" maxlength="4">
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+    <h2>Dữ liệu</h2>
+    <button id="btnWipe" class="danger">🗑 Xoá toàn bộ dữ liệu</button>
+  </div>
+  <div class="dlg-foot"><button class="primary" id="btnSaveSettings">Lưu cài đặt</button></div>
+</dialog>
+
+<!-- ===== Dialog: Scan AI ===== -->
+<dialog id="dlgScan">
+  <div class="dlg-head"><h2 style="margin:0">🤖 Scan hoá đơn bằng AI</h2><button onclick="dlgScan.close()">✕</button></div>
+  <div class="dlg-body">
+    <div id="scanStep1">
+      <p class="muted" style="margin-top:0">
+        Chọn file PDF gộp các hoá đơn đã scan (hoặc ảnh chụp). Trên hoá đơn bạn có thể note tay:
+        tên/chữ cái đầu của người có phần riêng (P, L, B…), “/2” nếu chia 2, ai trả tiền…
+        AI sẽ đọc và đề xuất danh sách hoá đơn — <b>bạn luôn được xem lại và sửa trước khi thêm vào bảng</b>.
+      </p>
+      <input type="file" id="scanFiles" multiple accept="application/pdf,image/png,image/jpeg,image/webp,image/gif">
+      <div class="field" style="margin-top:10px">
+        <label>Ghi chú thêm cho AI (tuỳ chọn — vd: “tất cả bill Costco là Long trả”)</label>
+        <textarea id="scanHint" rows="2"></textarea>
+      </div>
+      <div class="warn-box">💰 Chi phí ước tính: khoảng $0.01–$0.08 cho mỗi trang hoá đơn (tuỳ model). Chi phí thực tế hiển thị sau khi chạy.</div>
+      <div id="scanErr" class="bad" style="display:none;margin-top:8px"></div>
+      <div style="margin-top:10px">
+        <button class="primary" id="btnRunScan">▶️ Phân tích</button>
+        <span id="scanStatus" class="muted" style="margin-left:8px"></span>
+      </div>
+    </div>
+    <div id="scanStep2" style="display:none">
+      <div class="muted" id="scanUsage" style="margin-bottom:10px"></div>
+      <div id="scanResults"></div>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button id="btnScanBack" style="display:none">← Quét lại</button>
+    <button class="primary" id="btnScanAdd" style="display:none">➕ Thêm các hoá đơn đã chọn</button>
+  </div>
+</dialog>
+
+<input type="file" id="importFile" accept="application/json" style="display:none">
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   Chia tiền nhà — mô phỏng logic file Excel "Chia tiền với bé đù"
+   - Mỗi bill: tổng tiền, người trả, phần riêng từng người (được nhập
+     dạng BIỂU THỨC giống công thức Excel, vd "49.99/2"), phần còn lại
+     chia đều cho danh sách participants.
+   - Tiền tính bằng SỐ NGUYÊN đơn vị 1/10000 đô ("M") và nhân thêm hệ số
+     S = BCNN(1..số người) khi chia đều → chính xác tuyệt đối, không sai
+     số dấu phẩy động. Chỉ làm tròn về cent khi HIỂN THỊ (giống Excel).
+   ===================================================================== */
+
+const LS_KEY = "ctn_state_v1";
+const M = 10000; // 1 đô = 10000 đơn vị nội bộ
+
+// ---------- tiền tệ & biểu thức ----------
+// Chuỗi (có thể là biểu thức +-*/() như Excel) hoặc số -> integer M-units; NaN nếu sai
+function evalMoney(s){
+  if (typeof s === "number") return isFinite(s) ? Math.round(s * M) : NaN;
+  if (s == null) return NaN;
+  s = String(s).trim().replace(/,/g, ".");
+  if (!s || !/^[0-9+\-*/(). ]+$/.test(s)) return NaN;
+  try{
+    const v = Function('"use strict";return(' + s + ')')();
+    if (typeof v !== "number" || !isFinite(v)) return NaN;
+    return Math.round(v * M);
+  }catch(e){ return NaN; }
+}
+function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
+function lcmRange(n){ let l=1; for(let i=2;i<=n;i++) l = l/gcd(l,i)*i; return l; }
+// làm tròn half-away-from-zero (giống ROUND của Excel)
+function roundHalf(x){ return Math.sign(x) * Math.round(Math.abs(x)); }
+function fmtCentsRaw(c, symbol){
+  const sym = symbol ?? state.settings.symbol ?? "$";
+  const neg = c < 0; c = Math.abs(c);
+  const d = Math.floor(c/100), f = String(c%100).padStart(2,"0");
+  return (neg?"-":"") + sym + d.toLocaleString("en-US") + "." + f;
+}
+function fmtM(mv, symbol){ return fmtCentsRaw(roundHalf(mv/100), symbol); }          // M-units -> tiền 2 số lẻ
+function fmtScaled(v, S, symbol){ return fmtCentsRaw(roundHalf(v/(S*100)), symbol); } // (M*S)-units -> tiền 2 số lẻ
+function trimNum(mv){ // M-units -> chuỗi số gọn (tối đa 4 số lẻ, tối thiểu 2)
+  let s = (mv / M).toFixed(4);
+  while (s.endsWith("0") && !s.endsWith(".00")) s = s.slice(0,-1);
+  return s;
+}
+
+// ---------- state ----------
+let state = null;
+function defaultState(){
+  const now = new Date();
+  const mk = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  return {
+    version: 2,
+    people: ["Phát","Long","Ben"],
+    months: { [mk]: { bills: [] } },
+    currentMonth: mk,
+    settings: { apiKey:"", model:"claude-opus-4-8", symbol:"$", lastBackup:null }
+  };
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw){ state = JSON.parse(raw); if(!state.months || !state.people) throw 0; return; }
+  }catch(e){ console.warn("state hỏng, tạo mới", e); }
+  state = defaultState();
+}
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function curMonth(){
+  if (!state.months[state.currentMonth]) state.months[state.currentMonth] = { bills: [] };
+  return state.months[state.currentMonth];
+}
+
+// ---------- tính toán ----------
+// bill = { totalM:int, payer, participants:[..], personal:{tên: "biểu thức"} }
+// Trả về { ok, errors[], sharedM, shares:{tên: int (M*S)}, personalM:{tên:int}, S, parts }
+function computeBill(bill, people){
+  const S = lcmRange(Math.max(people.length,1));
+  const errors = [];
+  const totalM = bill.totalM|0;
+  const personal = bill.personal || {};
+  const personalM = {};
+  let personalSum = 0;
+  for (const p of people){
+    const raw = personal[p];
+    if (raw === undefined || raw === null || String(raw).trim()==="") { personalM[p]=0; continue; }
+    const v = evalMoney(raw);
+    if (isNaN(v) || v < 0){ errors.push(`phần riêng của ${p} không hợp lệ`); personalM[p]=0; continue; }
+    personalM[p] = v; personalSum += v;
+  }
+  const sharedM = totalM - personalSum;
+  const parts = (bill.participants||[]).filter(p => people.includes(p));
+  if (totalM <= 0) errors.push("Tổng bill phải > 0");
+  if (sharedM < 0) errors.push("Tổng phần riêng vượt quá tổng bill");
+  if (sharedM > 0 && parts.length === 0) errors.push("Chưa chọn người chia");
+  if (!people.includes(bill.payer)) errors.push("Chưa chọn người trả");
+  const shares = {};
+  for (const p of people){
+    let v = personalM[p] * S;
+    if (sharedM > 0 && parts.length > 0 && parts.includes(p)) v += sharedM * S / parts.length; // S chia hết cho parts.length
+    shares[p] = v;
+  }
+  // Cảnh báo nghi vấn (vẫn tính bình thường, chỉ nhắc kiểm tra):
+  // phần chung còn lại quá nhỏ so với bill (giống thuế/phí của các phần riêng)
+  // nhưng lại chia đều cho người KHÔNG có phần riêng nào → có thể do quên bỏ tick.
+  const warnings = [];
+  if (errors.length === 0 && sharedM > 0 && personalSum > 0 && sharedM * 100 <= totalM * 15){
+    const ganh = parts.filter(p => personalM[p] === 0);
+    if (ganh.length){
+      warnings.push({
+        short: `${ganh.join(", ")} gánh phần chung?`,
+        full: `Phần chung chỉ còn ${(sharedM/M).toFixed(2)} (≈${Math.round(sharedM*100/totalM)}% bill) — giống thuế/phí của các phần riêng, nhưng ${ganh.join(", ")} không có phần riêng mà vẫn phải chia đều. Nếu bill này thực ra chỉ của người có phần riêng: bỏ tick ${ganh.join(", ")} khỏi "chia đều cho", hoặc nhân thuế thẳng vào phần riêng (vd (24.99+19.99)*1.06/2).`
+      });
+    }
+  }
+  return { ok: errors.length===0, errors, warnings, sharedM, shares, personalM, S, parts };
+}
+
+// Tổng kết tháng — mọi giá trị là số nguyên chính xác
+function computeSummary(month, people){
+  const S = lcmRange(Math.max(people.length,1));
+  const paidM = {}, usedS = {};
+  people.forEach(p => { paidM[p]=0; usedS[p]=0; });
+  let totalM = 0, allOk = true;
+  for (const b of month.bills){
+    const r = computeBill(b, people);
+    if (!r.ok) { allOk = false; continue; }
+    totalM += b.totalM;
+    if (paidM[b.payer] !== undefined) paidM[b.payer] += b.totalM;
+    for (const p of people) usedS[p] += r.shares[p];
+  }
+  const balS = {};
+  people.forEach(p => balS[p] = paidM[p]*S - usedS[p]);
+  return { S, paidM, usedS, balS, totalM, allOk };
+}
+
+// Gợi ý chuyển tiền (đơn vị cent; dồn lệch làm tròn 1–2 cent vào người có |cân đối| lớn nhất)
+function settlements(summary, people){
+  const bal = {};
+  let drift = 0;
+  for (const p of people){ bal[p] = roundHalf(summary.balS[p] / (summary.S*100)); drift += bal[p]; }
+  if (drift !== 0){
+    let big = people[0];
+    for (const p of people) if (Math.abs(bal[p]) > Math.abs(bal[big])) big = p;
+    bal[big] -= drift;
+  }
+  const debtors = people.filter(p=>bal[p]<0).map(p=>({p, v:-bal[p]})).sort((a,b)=>b.v-a.v);
+  const creditors = people.filter(p=>bal[p]>0).map(p=>({p, v:bal[p]})).sort((a,b)=>b.v-a.v);
+  const moves = [];
+  let i=0, j=0;
+  while (i<debtors.length && j<creditors.length){
+    const amt = Math.min(debtors[i].v, creditors[j].v);
+    if (amt > 0) moves.push({ from: debtors[i].p, to: creditors[j].p, cents: amt });
+    debtors[i].v -= amt; creditors[j].v -= amt;
+    if (debtors[i].v === 0) i++;
+    if (creditors[j].v === 0) j++;
+  }
+  return moves;
+}
+
+// ---------- render ----------
+const $ = id => document.getElementById(id);
+let editingId = null;
+
+function escapeHtml(s){ return String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function monthLabel(mk){ const [y,m]=mk.split("-"); return "Tháng "+parseInt(m,10)+"/"+y; }
+function fmtDate(d){ if (!d) return ""; const [y,m,dd] = d.split("-"); return parseInt(dd,10)+"/"+parseInt(m,10); }
+
+function renderMonthSel(){
+  const keys = Object.keys(state.months).sort();
+  $("monthSel").innerHTML = keys.map(k=>`<option value="${k}" ${k===state.currentMonth?"selected":""}>${monthLabel(k)}</option>`).join("");
+  $("tableTitle").textContent = "Hoá đơn — " + monthLabel(state.currentMonth);
+}
+
+function segPayerHTML(sel){
+  return state.people.map(p=>`<button type="button" data-p="${escapeHtml(p)}" class="${p===sel?"on":""}">${escapeHtml(p)}</button>`).join("");
+}
+function renderForm(keep){
+  $("fPayer").innerHTML = segPayerHTML(keep?.payer ?? null);
+  $("fPayer").querySelectorAll("button").forEach(b=>{
+    b.onclick = () => { $("fPayer").querySelectorAll("button").forEach(x=>x.classList.remove("on")); b.classList.add("on"); };
+  });
+  const parts = keep?.participants ?? state.people.slice();
+  $("fParts").innerHTML = state.people.map(p=>
+    `<button type="button" class="tick ${parts.includes(p)?"on":""}" data-p="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join("");
+  $("fParts").querySelectorAll("button").forEach(b=>{ b.onclick = ()=>b.classList.toggle("on"); });
+  const personal = keep?.personal ?? {};
+  $("fRieng").innerHTML = state.people.map(p=>
+    `<label>${escapeHtml(p)} <input type="text" inputmode="decimal" style="width:130px;text-align:right" data-p="${escapeHtml(p)}" value="${escapeHtml(personal[p]??"")}" placeholder="vd 49.99/2"></label>`).join("");
+}
+
+function readForm(){
+  const date = $("fDate").value;
+  const store = $("fStore").value.trim();
+  const desc = $("fDesc").value.trim();
+  const totalM = evalMoney($("fTotal").value);
+  const payerBtn = $("fPayer").querySelector("button.on");
+  const payer = payerBtn ? payerBtn.dataset.p : "";
+  const participants = [...$("fParts").querySelectorAll("button.on")].map(b=>b.dataset.p);
+  const personal = {};
+  $("fRieng").querySelectorAll("input").forEach(i=>{
+    const v = i.value.trim();
+    if (v) personal[i.dataset.p] = v; // giữ nguyên biểu thức, computeBill sẽ kiểm tra
+  });
+  return { date, store, desc, totalM, payer, participants, personal };
+}
+
+function validateBillInput(f){
+  const errs = [];
+  if (!f.store) errs.push("thiếu tên bill");
+  if (isNaN(f.totalM) || f.totalM<=0) errs.push("tổng bill không hợp lệ");
+  if (!f.payer) errs.push("chưa chọn người trả");
+  if (!isNaN(f.totalM) && f.totalM>0 && f.payer){
+    const r = computeBill({ totalM:f.totalM, payer:f.payer, participants:f.participants, personal:f.personal }, state.people);
+    errs.push(...r.errors.filter(e=>!errs.includes(e)));
+  }
+  return errs;
+}
+
+let viewOpts = { payer: "", sort: "date-asc" }; // bộ lọc/sắp xếp của bảng (không lưu)
+
+function renderFilterBar(){
+  if (viewOpts.payer && !state.people.includes(viewOpts.payer)) viewOpts.payer = "";
+  $("filterPayer").innerHTML = `<option value="">Tất cả</option>` +
+    state.people.map(p=>`<option value="${escapeHtml(p)}" ${p===viewOpts.payer?"selected":""}>${escapeHtml(p)}</option>`).join("");
+  $("sortBy").value = viewOpts.sort;
+}
+
+function renderTable(){
+  const month = curMonth();
+  const people = state.people;
+  const S = lcmRange(Math.max(people.length,1));
+  const t = $("billTable");
+  const all = month.bills;
+  let bills = viewOpts.payer ? all.filter(b=>b.payer===viewOpts.payer) : all.slice();
+  const byDate = (a,b)=>(a.date||"9999").localeCompare(b.date||"9999");
+  switch (viewOpts.sort){
+    case "date-desc":  bills.sort((a,b)=>byDate(b,a)); break;
+    case "total-desc": bills.sort((a,b)=>(b.totalM-a.totalM)||byDate(a,b)); break;
+    case "total-asc":  bills.sort((a,b)=>(a.totalM-b.totalM)||byDate(a,b)); break;
+    case "payer":      bills.sort((a,b)=>(people.indexOf(a.payer)-people.indexOf(b.payer))||byDate(a,b)); break;
+    default:           bills.sort(byDate);
+  }
+  $("filterInfo").textContent = viewOpts.payer
+    ? `hiện ${bills.length}/${all.length} hoá đơn do ${viewOpts.payer} trả — bảng tổng kết bên dưới vẫn tính đủ cả tháng`
+    : "";
+  if (bills.length === 0){
+    t.innerHTML = "";
+    $("emptyMsg").textContent = all.length === 0
+      ? "Chưa có hoá đơn nào trong tháng này. Nhập tay ở trên hoặc bấm “🤖 Scan hoá đơn (AI)”."
+      : "Không có hoá đơn nào khớp bộ lọc.";
+    $("emptyMsg").style.display = "block";
+    return;
+  }
+  $("emptyMsg").style.display = "none";
+  // hàng tiêu đề nằm trong <thead> để trình duyệt lặp lại nó ở đầu mỗi trang khi in
+  let html = "<thead><tr><th>Ngày</th><th>Bill</th><th>Mô tả</th><th>Người trả</th><th class=num>Tổng bill</th>"
+    + people.map(p=>`<th class=num>${escapeHtml(p)}</th>`).join("")
+    + "<th>Đối chiếu</th><th class='no-print'></th></tr></thead><tbody>";
+  let totM = 0, allOk = true;
+  const usedRow = {}; people.forEach(p=>usedRow[p]=0);
+  for (const b of bills){
+    const r = computeBill(b, people);
+    if (r.ok){ totM += b.totalM; people.forEach(p=>usedRow[p]+=r.shares[p]); } else allOk = false;
+    const cells = people.map(p=>{
+      if (!r.ok) return "<td class=num>—</td>";
+      const v = r.shares[p];
+      if (v===0) return `<td class="num muted">0.00</td>`;
+      let inner = fmtScaled(v, r.S).replace(state.settings.symbol,"");
+      const rm = r.personalM[p];
+      if (rm>0){
+        const expr = String((b.personal||{})[p]??"");
+        const showF = /[+\-*/()]/.test(expr) ? ` title="= ${escapeHtml(expr)}"` : "";
+        inner += `<div class="riui"${showF}>gồm riêng ${trimNum(rm)}${/[+\-*/()]/.test(expr)?" ƒ":""}</div>`;
+      }
+      return `<td class=num>${inner}</td>`;
+    }).join("");
+    const chia = r.parts.length===people.length ? "" :
+      `<div class="riui">chia ${r.parts.length===1? "riêng: " : r.parts.length+": "}${r.parts.map(escapeHtml).join(", ")}</div>`;
+    let check;
+    if (!r.ok)
+      check = `<span class=bad title="${escapeHtml(r.errors.join('; '))}">⚠ ${escapeHtml(r.errors.join("; "))}</span>`;
+    else if (r.warnings.length)
+      check = `<span class=warnc title="${escapeHtml(r.warnings.map(w=>w.full).join("  •  "))}">⚠ ${escapeHtml(r.warnings[0].short)}</span>`;
+    else
+      check = '<span class=ok>✓</span>';
+    html += `<tr class="bill ${b.id===editingId?'editing':''}" data-id="${b.id}">
+      <td>${fmtDate(b.date)}</td>
+      <td><b>${escapeHtml(b.store)}</b>${chia}</td>
+      <td>${escapeHtml(b.desc)}</td>
+      <td>${escapeHtml(b.payer)}</td>
+      <td class=num>${trimNum(b.totalM)}</td>
+      ${cells}
+      <td>${check}</td>
+      <td class="rowbtns no-print">
+        <button title="Nhân bản" data-act="dup">⧉</button>
+        <button title="Xoá" data-act="del" class="danger">✕</button>
+      </td></tr>`;
+  }
+  html += `<tr style="font-weight:700;background:#eef1f4"><td colspan=4>Tổng${viewOpts.payer?" (đang lọc)":""}</td>
+    <td class=num>${trimNum(totM)}</td>
+    ${people.map(p=>`<td class=num>${fmtScaled(usedRow[p], S).replace(state.settings.symbol,"")}</td>`).join("")}
+    <td>${allOk?'<span class=ok>✓</span>':'<span class=bad>⚠</span>'}</td><td class="no-print"></td></tr></tbody>`;
+  t.innerHTML = html;
+
+  t.querySelectorAll("tr.bill").forEach(tr=>{
+    tr.onclick = (e)=>{
+      const act = e.target?.dataset?.act;
+      const id = tr.dataset.id;
+      if (act==="del"){ e.stopPropagation(); delBill(id); return; }
+      if (act==="dup"){ e.stopPropagation(); dupBill(id); return; }
+      startEdit(id);
+    };
+  });
+}
+
+function renderSummary(){
+  const month = curMonth();
+  const people = state.people;
+  const sum = computeSummary(month, people);
+  let html = "<tr><th></th><th class=num>Thực chi (1)</th><th class=num>Thực dùng (2)</th><th class=num>Cân đối (1)−(2)</th></tr>";
+  for (const p of people){
+    const balC = roundHalf(sum.balS[p]/(sum.S*100));
+    html += `<tr><td><b>${escapeHtml(p)}</b></td>
+      <td class=num>${fmtM(sum.paidM[p])}</td>
+      <td class=num>${fmtScaled(sum.usedS[p], sum.S)}</td>
+      <td class="num ${balC>0?'pos':balC<0?'neg':''}">${fmtCentsRaw(balC)}</td></tr>`;
+  }
+  html += `<tr style="font-weight:700"><td>Tổng tháng</td><td class=num>${fmtM(sum.totalM)}</td><td class=num>${fmtScaled(people.reduce((a,p)=>a+sum.usedS[p],0), sum.S)}</td><td></td></tr>`;
+  $("sumTable").innerHTML = html;
+
+  const moves = settlements(sum, people);
+  $("settleBox").innerHTML = "<b>Gợi ý chuyển tiền:</b><br>" +
+    (moves.length===0 ? "<span class=muted>Đã cân bằng — không ai nợ ai 🎉</span>"
+      : moves.map(m=>`• <b>${escapeHtml(m.from)}</b> chuyển cho <b>${escapeHtml(m.to)}</b>: <b>${fmtCentsRaw(m.cents)}</b>`).join("<br>"))
+    + (month.bills.some(b=>!computeBill(b,people).ok) ? "<br><span class=bad>⚠ Có hoá đơn lỗi chưa được tính — kiểm tra cột Đối chiếu.</span>" : "");
+}
+
+function renderAll(){
+  renderMonthSel();
+  renderFilterBar();
+  renderTable();
+  renderSummary();
+  $("lastBackup").textContent = state.settings.lastBackup ? (" Lần sao lưu gần nhất: " + new Date(state.settings.lastBackup).toLocaleDateString("vi-VN") + ".") : " Bạn chưa sao lưu lần nào.";
+}
+
+// ---------- thao tác bill ----------
+function resetForm(){
+  editingId = null;
+  $("formTitle").textContent = "Thêm hoá đơn";
+  $("btnSave").textContent = "➕ Thêm hoá đơn";
+  $("btnCancelEdit").style.display = "none";
+  $("fStore").value = ""; $("fDesc").value = ""; $("fTotal").value = "";
+  $("fStoreGhost").textContent = "";
+  $("formHint").textContent = "";
+  renderForm({ payer: null, participants: state.people.slice(), personal: {} });
+  $("fRiengBox").open = false;
+}
+function startEdit(id){
+  const b = curMonth().bills.find(x=>x.id===id);
+  if (!b) return;
+  editingId = id;
+  $("formTitle").textContent = "Sửa hoá đơn";
+  $("btnSave").textContent = "💾 Cập nhật";
+  $("btnCancelEdit").style.display = "";
+  $("fDate").value = b.date || "";
+  $("fStore").value = b.store; $("fDesc").value = b.desc; $("fTotal").value = trimNum(b.totalM);
+  $("fStoreGhost").textContent = "";
+  renderForm(b);
+  if (Object.keys(b.personal||{}).length) $("fRiengBox").open = true;
+  renderTable();
+  $("entryCard").scrollIntoView({behavior:"smooth"});
+}
+function saveBill(){
+  const f = readForm();
+  const errs = validateBillInput(f);
+  if (errs.length){ $("formHint").innerHTML = `<span class=bad>⚠ ${escapeHtml(errs.join(", "))}</span>`; return; }
+  const check = computeBill({ totalM:f.totalM, payer:f.payer, participants:f.participants, personal:f.personal }, state.people);
+  const month = curMonth();
+  if (editingId){
+    const b = month.bills.find(x=>x.id===editingId);
+    Object.assign(b, { date:f.date, store:f.store, desc:f.desc, totalM:f.totalM, payer:f.payer, participants:f.participants, personal:f.personal });
+    toast("Đã cập nhật hoá đơn");
+  } else {
+    month.bills.push({ id: uid(), date:f.date, store:f.store, desc:f.desc, totalM:f.totalM, payer:f.payer, participants:f.participants, personal:f.personal });
+    toast("Đã thêm: " + f.store + " — " + fmtM(f.totalM));
+  }
+  save();
+  const keepDate = $("fDate").value, keepPayer = f.payer;
+  resetForm();
+  $("fDate").value = keepDate;
+  const pb = [...$("fPayer").querySelectorAll("button")].find(b=>b.dataset.p===keepPayer);
+  if (pb) pb.classList.add("on");
+  // bill hợp lệ nhưng có điểm nghi vấn → nhắc ngay để sửa kịp thời
+  if (check.warnings.length)
+    $("formHint").innerHTML = `<span class=warnc>⚠ ${escapeHtml(check.warnings[0].full)}</span>`;
+  renderAll();
+  $("fStore").focus();
+}
+function delBill(id){
+  const b = curMonth().bills.find(x=>x.id===id);
+  if (!b) return;
+  if (!confirm(`Xoá hoá đơn "${b.store}" (${fmtM(b.totalM)})?`)) return;
+  curMonth().bills = curMonth().bills.filter(x=>x.id!==id);
+  if (editingId===id) resetForm();
+  save(); renderAll(); toast("Đã xoá");
+}
+function dupBill(id){
+  const b = curMonth().bills.find(x=>x.id===id);
+  if (!b) return;
+  curMonth().bills.push({ ...JSON.parse(JSON.stringify(b)), id: uid() });
+  save(); renderAll(); toast("Đã nhân bản — nhớ sửa lại ngày/số tiền");
+}
+
+// ---------- backup ----------
+function doExport(){
+  const blob = new Blob([JSON.stringify(state, null, 1)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "chia-tien-nha-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  state.settings.lastBackup = Date.now();
+  save(); renderAll();
+  toast("Đã tải file sao lưu");
+}
+function doImport(file){
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const s = JSON.parse(rd.result);
+      if (!s.months || !s.people) throw new Error("file không đúng định dạng");
+      if (!confirm("Khôi phục sẽ THAY THẾ toàn bộ dữ liệu hiện tại bằng dữ liệu trong file. Tiếp tục?")) return;
+      s.settings = Object.assign(defaultState().settings, s.settings||{});
+      state = s;
+      if (!state.months[state.currentMonth]) state.currentMonth = Object.keys(state.months).sort().pop();
+      save(); resetForm(); renderAll(); toast("Đã khôi phục dữ liệu");
+    }catch(e){ alert("Không đọc được file: " + e.message); }
+  };
+  rd.readAsText(file);
+}
+
+// ---------- AI scan ----------
+const SCAN_SCHEMA = {
+  type: "object",
+  properties: {
+    bills: { type: "array", items: {
+      type: "object",
+      properties: {
+        date:        { type: "string", description: "YYYY-MM-DD, hoặc \"\" nếu không đọc được" },
+        store:       { type: "string" },
+        description: { type: "string" },
+        payer:       { type: "string", description: "tên người trả, hoặc \"\" nếu không rõ" },
+        total:       { type: "number" },
+        participants:{ type: "array", items: { type: "string" } },
+        personal:    { type: "array", items: {
+          type: "object",
+          properties: { person: {type:"string"}, amount: {type:"number"} },
+          required: ["person","amount"], additionalProperties: false } },
+        notes:       { type: "string" },
+        confidence:  { type: "string", enum: ["high","medium","low"] }
+      },
+      required: ["date","store","description","payer","total","participants","personal","notes","confidence"],
+      additionalProperties: false
+    }}
+  },
+  required: ["bills"],
+  additionalProperties: false
+};
+
+function scanPrompt(extraHint){
+  const people = state.people;
+  const abbr = people.map(p=>`${p[0].toUpperCase()} = ${p}`).join(", ");
+  return `Bạn là trợ lý nhập liệu cho bảng chia tiền sinh hoạt chung của ${people.length} người: ${people.join(", ")}.
+Tài liệu đính kèm là các hoá đơn (receipt) đã scan/chụp, có thể kèm ghi chú viết tay của người dùng về cách phân chia.
+
+QUY ƯỚC PHÂN CHIA:
+- Mặc định (không có ghi chú): hoá đơn chia đều cho cả ${people.length} người → participants = [${people.map(p=>`"${p}"`).join(", ")}].
+- Ghi chú "/2" hoặc "chia 2": chia đều cho ${people[0]}${people[1]?` và ${people[1]}`:""} (những người khác không tham gia), trừ khi ghi rõ tên khác.
+- Ghi chú chỉ 1 tên trên cả hoá đơn: cả hoá đơn là của riêng người đó → participants = [tên đó].
+- Món hàng bị khoanh/gạch chân/đánh dấu kèm tên hoặc chữ cái: cộng giá món đó vào "personal" của người đó; phần còn lại của hoá đơn chia đều cho participants. Nếu 1 món được note chia cho 2 người thì mỗi người nhận một nửa giá món trong "personal".
+- Chữ viết tắt: ${abbr}.
+- Ghi chú ai trả (vd "Long trả", "L pay"): điền vào "payer". Không rõ thì để "".
+
+YÊU CẦU CHÍNH XÁC (quan trọng nhất — đây là tiền bạc):
+- Mỗi hoá đơn = 1 phần tử trong mảng "bills". KHÔNG tách từng món, trừ phần riêng.
+- "total" = tổng tiền cuối cùng trên hoá đơn (sau thuế/tip). Đọc kỹ từng chữ số, không đoán.
+- Tổng các "personal.amount" không được vượt quá "total".
+- "date" theo ngày in trên hoá đơn, định dạng YYYY-MM-DD; không đọc được thì "".
+- "confidence": "high" khi số liệu và ghi chú rõ ràng; "medium" khi phải suy đoán một phần; "low" khi mờ/không chắc — luôn giải thích lý do bằng tiếng Việt trong "notes".
+- Trang nào không phải hoá đơn thì bỏ qua.
+${extraHint ? "\nGHI CHÚ THÊM TỪ NGƯỜI DÙNG (ưu tiên áp dụng):\n" + extraHint : ""}`;
+}
+
+const MODEL_PRICES = { // USD / triệu token: [vào, ra]
+  "claude-opus-4-8":[5,25], "claude-sonnet-5":[3,15], "claude-haiku-4-5":[1,5]
+};
+
+function fileToBlock(file){
+  return new Promise((resolve,reject)=>{
+    const rd = new FileReader();
+    rd.onerror = ()=>reject(new Error("không đọc được file " + file.name));
+    rd.onload = ()=>{
+      const b64 = String(rd.result).split(",")[1];
+      if (file.type === "application/pdf")
+        resolve({ type:"document", source:{ type:"base64", media_type:"application/pdf", data:b64 } });
+      else
+        resolve({ type:"image", source:{ type:"base64", media_type:file.type, data:b64 } });
+    };
+    rd.readAsDataURL(file);
+  });
+}
+
+let scanProposals = [];
+
+async function runScan(){
+  const files = [...$("scanFiles").files];
+  const err = $("scanErr"); err.style.display = "none";
+  if (!files.length){ err.textContent = "Chưa chọn file."; err.style.display = "block"; return; }
+  if (!state.settings.apiKey){ err.textContent = "Chưa có API key — bấm ⚙️ để nhập Anthropic API key trước."; err.style.display = "block"; return; }
+  const totalBytes = files.reduce((a,f)=>a+f.size,0);
+  if (totalBytes > 25*1024*1024){ err.textContent = "Tổng dung lượng file vượt 25MB — hãy chia nhỏ."; err.style.display="block"; return; }
+
+  $("btnRunScan").disabled = true;
+  $("scanStatus").innerHTML = '<span class="spinner"></span>Đang gửi cho AI đọc… (có thể mất 1–3 phút)';
+  try{
+    const blocks = await Promise.all(files.map(fileToBlock));
+    const model = state.settings.model || "claude-opus-4-8";
+    const body = {
+      model,
+      max_tokens: 16000,
+      output_config: { format: { type: "json_schema", schema: SCAN_SCHEMA } },
+      messages: [{ role:"user", content: [...blocks, { type:"text", text: scanPrompt($("scanHint").value.trim()) }] }]
+    };
+    if (!model.startsWith("claude-haiku")) body.thinking = { type: "adaptive" };
+
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": state.settings.apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    if (!resp.ok){
+      const msg = data?.error?.message || resp.statusText;
+      if (resp.status === 401) throw new Error("API key không hợp lệ (401). Kiểm tra lại trong ⚙️ Cài đặt.");
+      if (resp.status === 429) throw new Error("Bị giới hạn tốc độ (429) — đợi một lát rồi thử lại.");
+      if (resp.status === 529) throw new Error("Máy chủ Anthropic đang quá tải (529) — thử lại sau.");
+      throw new Error("Lỗi API " + resp.status + ": " + msg);
+    }
+    if (data.stop_reason === "refusal") throw new Error("AI từ chối xử lý nội dung này.");
+    if (data.stop_reason === "max_tokens") throw new Error("Kết quả quá dài, bị cắt — hãy chia file thành các phần nhỏ hơn.");
+    const textBlock = (data.content||[]).filter(b=>b.type==="text").pop();
+    if (!textBlock) throw new Error("AI không trả về dữ liệu.");
+    const parsed = JSON.parse(textBlock.text);
+    scanProposals = (parsed.bills||[]).map(b=>normalizeProposal(b));
+    const u = data.usage || {};
+    const pr = MODEL_PRICES[model] || [5,25];
+    const cost = (u.input_tokens||0)/1e6*pr[0] + (u.output_tokens||0)/1e6*pr[1];
+    $("scanUsage").textContent = `Đã đọc xong — ${scanProposals.length} hoá đơn. Token: ${u.input_tokens||"?"} vào / ${u.output_tokens||"?"} ra ≈ $${cost.toFixed(3)}. Kiểm tra kỹ từng dòng dưới đây rồi mới thêm.`;
+    renderScanResults();
+    $("scanStep1").style.display = "none";
+    $("scanStep2").style.display = "";
+    $("btnScanBack").style.display = "";
+    $("btnScanAdd").style.display = "";
+  }catch(e){
+    err.textContent = "⚠ " + e.message;
+    err.style.display = "block";
+  }finally{
+    $("btnRunScan").disabled = false;
+    $("scanStatus").textContent = "";
+  }
+}
+
+function normalizeProposal(b){
+  const people = state.people;
+  const fix = name => {
+    if (!name) return "";
+    const exact = people.find(p=>p.toLowerCase()===String(name).toLowerCase()); if (exact) return exact;
+    const ini = people.find(p=>p[0].toLowerCase()===String(name)[0]?.toLowerCase());
+    return ini || "";
+  };
+  const personal = {};
+  for (const it of (b.personal||[])){
+    const p = fix(it.person);
+    const c = evalMoney(it.amount);
+    if (p && !isNaN(c) && c>0){
+      personal[p] = personal[p] ? personal[p] + "+" + trimNum(c) : trimNum(c);
+    }
+  }
+  let participants = (b.participants||[]).map(fix).filter(Boolean);
+  participants = [...new Set(participants)];
+  if (participants.length===0) participants = people.slice();
+  const totalM = evalMoney(b.total);
+  return {
+    include: true,
+    date: /^\d{4}-\d{2}-\d{2}$/.test(b.date||"") ? b.date : "",
+    store: String(b.store||"").slice(0,80),
+    desc: String(b.description||"").slice(0,120),
+    payer: fix(b.payer),
+    totalM: isNaN(totalM) ? 0 : Math.max(0,totalM),
+    participants, personal,
+    notes: String(b.notes||""), confidence: ["high","medium","low"].includes(b.confidence)?b.confidence:"medium"
+  };
+}
+
+function renderScanResults(){
+  const box = $("scanResults");
+  if (!scanProposals.length){ box.innerHTML = "<p class=muted>AI không tìm thấy hoá đơn nào trong file.</p>"; return; }
+  box.innerHTML = scanProposals.map((b,i)=>{
+    const confLabel = {high:"chắc chắn", medium:"cần kiểm tra", low:"KHÔNG chắc"}[b.confidence];
+    return `<div class="scan-bill" data-i="${i}">
+      <div class="head">
+        <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" class="sb-inc" ${b.include?"checked":""}> <b>#${i+1}</b></label>
+        <input type="date" class="sb-date" value="${b.date}">
+        <input type="text" class="sb-store" value="${escapeHtml(b.store)}" placeholder="Bill" style="width:150px">
+        <input type="text" class="sb-desc" value="${escapeHtml(b.desc)}" placeholder="Mô tả" style="width:150px">
+        <input type="text" class="sb-total amt" value="${trimNum(b.totalM)}">
+        <span class="pill ${b.confidence}">${confLabel}</span>
+      </div>
+      <div class="scan-grid">
+        <span class="muted">Người trả</span>
+        <span class="seg sb-payer">${state.people.map(p=>`<button type="button" data-p="${escapeHtml(p)}" class="${p===b.payer?"on":""}">${escapeHtml(p)}</button>`).join("")}</span>
+        <span class="muted">Chia đều cho</span>
+        <span class="seg">${state.people.map(p=>`<button type="button" class="tick sb-part ${b.participants.includes(p)?"on":""}" data-p="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join("")}</span>
+        <span class="muted">Phần riêng</span>
+        <span class="chk">${state.people.map(p=>`<label>${escapeHtml(p)} <input type="text" class="sb-rieng amt" data-p="${escapeHtml(p)}" value="${escapeHtml(b.personal[p]??"")}" placeholder="0"></label>`).join("")}</span>
+      </div>
+      ${b.notes?`<div class="muted" style="margin-top:6px">📝 AI: ${escapeHtml(b.notes)}</div>`:""}
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".sb-payer button").forEach(btn=>{
+    btn.onclick = ()=>{ btn.parentElement.querySelectorAll("button").forEach(x=>x.classList.remove("on")); btn.classList.add("on"); };
+  });
+  box.querySelectorAll(".sb-part").forEach(btn=>{ btn.onclick = ()=>btn.classList.toggle("on"); });
+}
+
+function collectScanEdits(){
+  const out = [];
+  $("scanResults").querySelectorAll(".scan-bill").forEach(div=>{
+    if (!div.querySelector(".sb-inc").checked) return;
+    const personal = {};
+    div.querySelectorAll(".sb-rieng").forEach(i=>{
+      const v = i.value.trim(); if (v) personal[i.dataset.p] = v;
+    });
+    out.push({
+      date: div.querySelector(".sb-date").value,
+      store: div.querySelector(".sb-store").value.trim(),
+      desc: div.querySelector(".sb-desc").value.trim(),
+      totalM: evalMoney(div.querySelector(".sb-total").value),
+      payer: div.querySelector(".sb-payer button.on")?.dataset.p || "",
+      participants: [...div.querySelectorAll(".sb-part.on")].map(b=>b.dataset.p),
+      personal
+    });
+  });
+  return out;
+}
+
+function addScanned(){
+  const items = collectScanEdits();
+  if (!items.length){ toast("Chưa chọn hoá đơn nào"); return; }
+  const bad = [];
+  items.forEach((b,i)=>{
+    const errs = [];
+    if (!b.store) errs.push("thiếu tên");
+    if (isNaN(b.totalM)||b.totalM<=0) errs.push("tổng không hợp lệ");
+    if (!b.payer) errs.push("thiếu người trả");
+    const r = computeBill(b, state.people);
+    errs.push(...r.errors.filter(e=>!errs.includes(e)));
+    if (errs.length) bad.push(`#${i+1}: ${errs.join(", ")}`);
+  });
+  if (bad.length){ alert("Sửa các mục sau trước khi thêm:\n" + bad.join("\n")); return; }
+  const month = curMonth();
+  for (const b of items) month.bills.push({ id: uid(), ...b });
+  save(); renderAll();
+  dlgScan.close();
+  toast(`Đã thêm ${items.length} hoá đơn từ AI scan ✓ — nhớ đối chiếu lại với hoá đơn gốc`);
+}
+
+// ---------- settings ----------
+function renderSettings(){
+  $("setKey").value = state.settings.apiKey || "";
+  $("setModel").value = state.settings.model || "claude-opus-4-8";
+  $("setSymbol").value = state.settings.symbol || "$";
+  const box = $("peopleList");
+  box.innerHTML = state.people.map((p,i)=>
+    `<div class="people-row"><input type="text" data-i="${i}" value="${escapeHtml(p)}" style="width:180px"> <button data-del="${i}" class="danger" title="Xoá người này">✕</button></div>`
+  ).join("");
+  box.querySelectorAll("button[data-del]").forEach(b=>{
+    b.onclick = ()=>{
+      const i = +b.dataset.del;
+      const name = state.people[i];
+      if (state.people.length<=2){ alert("Cần ít nhất 2 người."); return; }
+      const used = Object.values(state.months).some(m=>m.bills.some(x=>x.payer===name || (x.participants||[]).includes(name) || (x.personal||{})[name]));
+      if (used && !confirm(`"${name}" đang có dữ liệu trong các hoá đơn. Xoá sẽ gỡ tên này khỏi mọi hoá đơn (các bill do "${name}" trả sẽ báo lỗi để bạn sửa lại). Tiếp tục?`)) return;
+      state.people.splice(i,1);
+      for (const m of Object.values(state.months)) for (const bl of m.bills){
+        bl.participants = (bl.participants||[]).filter(x=>x!==name);
+        if (bl.personal) delete bl.personal[name];
+      }
+      save(); renderSettings(); resetForm(); renderAll();
+    };
+  });
+}
+function saveSettings(){
+  const inputs = [...$("peopleList").querySelectorAll("input[data-i]")];
+  const newNames = inputs.map(i=>i.value.trim());
+  if (newNames.some(n=>!n)){ alert("Tên không được để trống."); return; }
+  if (new Set(newNames.map(n=>n.toLowerCase())).size !== newNames.length){ alert("Tên bị trùng."); return; }
+  newNames.forEach((nn,i)=>{
+    const old = state.people[i];
+    if (old !== nn){
+      for (const m of Object.values(state.months)) for (const b of m.bills){
+        if (b.payer===old) b.payer=nn;
+        b.participants = (b.participants||[]).map(x=>x===old?nn:x);
+        if (b.personal && b.personal[old]!==undefined){ b.personal[nn]=b.personal[old]; delete b.personal[old]; }
+      }
+      state.people[i]=nn;
+    }
+  });
+  state.settings.apiKey = $("setKey").value.trim();
+  state.settings.model = $("setModel").value;
+  state.settings.symbol = $("setSymbol").value || "$";
+  save(); dlgSettings.close(); resetForm(); renderAll(); toast("Đã lưu cài đặt");
+}
+
+// ---------- toast ----------
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+
+// ---------- gợi ý tên bill (gõ "cos" → "Costco", bấm Tab để xác nhận) ----------
+const DEFAULT_STORES = ["Costco","Greatwall","Freshworld","Safeway","Eden","Giant","Walmart",
+  "TJ Max","ChickfilA","Panda","MCDonald","Đồ Thái","Tiền điện","Tiền wifi","Tiền nhà"];
+// so khớp không phân biệt hoa/thường và DẤU tiếng Việt ("do" khớp "Đồ Thái")
+function normVi(s){
+  return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();
+}
+function storeSuggestions(){
+  const freq = new Map(); // key chuẩn hoá -> {name, n}
+  for (const m of Object.values(state.months)) for (const b of m.bills){
+    const s = (b.store||"").trim(); if (!s) continue;
+    const k = normVi(s);
+    const e = freq.get(k) || { name:s, n:0 };
+    e.n++; e.name = s; // giữ cách viết dùng gần nhất
+    freq.set(k, e);
+  }
+  for (const s of DEFAULT_STORES){ const k = normVi(s); if (!freq.has(k)) freq.set(k, {name:s, n:0}); }
+  return [...freq.values()].sort((a,b)=>b.n-a.n);
+}
+function bestStoreMatch(typed){
+  const p = normVi(typed.trim());
+  if (!p) return null;
+  for (const s of storeSuggestions()){
+    const ns = normVi(s.name);
+    if (ns !== p && ns.startsWith(p)) return s.name;
+  }
+  return null;
+}
+// vị trí trong chuỗi gốc tương ứng với phần người dùng đã gõ (xử lý lệch do dấu)
+function rawPrefixLen(match, typedNorm){
+  for (let i=1; i<=match.length; i++)
+    if (normVi(match.slice(0,i)).length >= typedNorm.length) return i;
+  return match.length;
+}
+// Gợi ý hiển thị bằng lớp "ghost" xám phía sau ô nhập, KHÔNG sửa nội dung ô khi đang gõ
+// → hoạt động được với bộ gõ tiếng Việt của macOS (IME/composition) lẫn EVKey/OpenKey.
+// Chỉ khi bấm Tab (hoặc →/Enter) giá trị mới được ghi vào ô.
+function attachAutocomplete(input, ghost, nextId){
+  let current = null;   // { match, lead } — gợi ý đang hiển thị
+  let suppress = false; // vừa bấm xoá thì không gợi ý lại ngay
+  const clear = ()=>{ current = null; ghost.textContent = ""; };
+  const update = ()=>{
+    const typed = input.value;
+    if (!typed.trim() || document.activeElement !== input){ clear(); return; }
+    if (input.selectionStart !== typed.length){ clear(); return; } // chỉ gợi ý khi con trỏ ở cuối
+    const match = bestStoreMatch(typed);
+    if (!match){ clear(); return; }
+    const keep = rawPrefixLen(match, normVi(typed.trim()));
+    const rem = match.slice(keep);
+    if (!rem){ clear(); return; }
+    current = { match, lead: typed.match(/^\s*/)[0] };
+    // phần đã gõ vẽ trong suốt (để canh vị trí), phần gợi ý vẽ xám
+    ghost.innerHTML = `<span>${escapeHtml(typed)}</span><span class="sug">${escapeHtml(rem)}</span>`;
+  };
+  const accept = ()=>{
+    if (!current) return false;
+    input.value = current.lead + current.match;
+    clear();
+    return true;
+  };
+  input.addEventListener("input", e=>{
+    if (suppress){ suppress = false; clear(); return; }
+    update(); // chạy cả khi đang composition — chỉ ĐỌC giá trị, không sửa
+  });
+  input.addEventListener("compositionupdate", ()=>requestAnimationFrame(update));
+  input.addEventListener("compositionend", ()=>requestAnimationFrame(update));
+  input.addEventListener("keydown", e=>{
+    suppress = (e.key === "Backspace" || e.key === "Delete");
+    if (!current) return;
+    if (e.key === "Escape"){
+      clear(); e.preventDefault(); e.stopPropagation();
+    } else if (e.key === "Tab"){
+      e.preventDefault();
+      accept();
+      if (nextId) $(nextId).focus(); // Tab: nhận gợi ý rồi nhảy sang ô kế tiếp
+    } else if ((e.key === "Enter" || e.key === "ArrowRight") && !e.isComposing
+               && input.selectionStart === input.value.length){
+      e.preventDefault();
+      accept();
+    }
+  });
+  input.addEventListener("blur", clear);
+  input.addEventListener("focus", ()=>requestAnimationFrame(update));
+}
+
+// ---------- gắn sự kiện ----------
+function init(){
+  load();
+  $("fDate").value = new Date().toISOString().slice(0,10);
+  attachAutocomplete($("fStore"), $("fStoreGhost"), "fDesc");
+  resetForm();
+  renderAll();
+
+  $("filterPayer").onchange = e => { viewOpts.payer = e.target.value; renderTable(); };
+  $("sortBy").onchange = e => { viewOpts.sort = e.target.value; renderTable(); };
+  $("monthSel").onchange = e => { state.currentMonth = e.target.value; save(); resetForm(); renderAll(); };
+  $("btnAddMonth").onclick = ()=>{
+    const v = prompt("Nhập tháng mới (định dạng YYYY-MM), vd 2026-08:", state.currentMonth);
+    if (!v) return;
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(v.trim())){ alert("Định dạng phải là YYYY-MM, vd 2026-08"); return; }
+    const mk = v.trim();
+    if (!state.months[mk]) state.months[mk] = { bills: [] };
+    state.currentMonth = mk;
+    save(); resetForm(); renderAll();
+  };
+  $("btnSave").onclick = saveBill;
+  $("btnCancelEdit").onclick = ()=>{ resetForm(); renderTable(); };
+  $("fTotal").addEventListener("keydown", e=>{ if(e.key==="Enter") saveBill(); });
+  $("fDesc").addEventListener("keydown", e=>{ if(e.key==="Enter") saveBill(); });
+
+  $("btnPrint").onclick = ()=>window.print();
+  $("btnExport").onclick = doExport;
+  $("btnImport").onclick = ()=>$("importFile").click();
+  $("importFile").onchange = e => { if (e.target.files[0]) doImport(e.target.files[0]); e.target.value=""; };
+
+  $("btnSettings").onclick = ()=>{ renderSettings(); dlgSettings.showModal(); };
+  $("btnSaveSettings").onclick = saveSettings;
+  $("btnAddPerson").onclick = ()=>{
+    const n = prompt("Tên thành viên mới:"); if (!n||!n.trim()) return;
+    if (state.people.some(p=>p.toLowerCase()===n.trim().toLowerCase())){ alert("Tên đã tồn tại."); return; }
+    if (state.people.length>=8){ alert("Tối đa 8 người."); return; }
+    state.people.push(n.trim()); save(); renderSettings(); resetForm(); renderAll();
+  };
+  $("btnShowKey").onclick = ()=>{ const k=$("setKey"); k.type = k.type==="password"?"text":"password"; };
+  $("btnWipe").onclick = ()=>{
+    if (!confirm("Xoá TOÀN BỘ dữ liệu (mọi tháng, mọi hoá đơn, cài đặt)? Không thể hoàn tác.")) return;
+    if (!confirm("Chắc chắn chưa? Nếu chưa sao lưu thì bấm Huỷ và sao lưu trước.")) return;
+    localStorage.removeItem(LS_KEY); state = defaultState(); save(); dlgSettings.close(); resetForm(); renderAll();
+  };
+
+  $("btnScan").onclick = ()=>{
+    $("scanStep1").style.display=""; $("scanStep2").style.display="none";
+    $("btnScanBack").style.display="none"; $("btnScanAdd").style.display="none";
+    $("scanErr").style.display="none"; $("scanStatus").textContent="";
+    dlgScan.showModal();
+  };
+  $("btnRunScan").onclick = runScan;
+  $("btnScanBack").onclick = ()=>{
+    $("scanStep1").style.display=""; $("scanStep2").style.display="none";
+    $("btnScanBack").style.display="none"; $("btnScanAdd").style.display="none";
+  };
+  $("btnScanAdd").onclick = addScanned;
+}
+
+document.addEventListener("DOMContentLoaded", init);
+
+// API nội bộ để kiểm thử tự động
+window.__ctn = {
+  getState: ()=>state,
+  setState: (s)=>{ state = s; save(); resetForm(); renderAll(); },
+  computeBill, computeSummary, settlements, evalMoney, roundHalf, fmtM, trimNum
+};
+</script>
+</body>
+</html>
